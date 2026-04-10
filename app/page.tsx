@@ -252,7 +252,7 @@ export default function HomePage() {
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="mb-8 text-2xl font-bold sm:text-3xl">Why Join CCRA?</h2>
 
-          <div className="grid grid-cols-3 gap-30 sm:grid-cols-10 lg:grid-cols-3">
+          <div className="mx-auto w-full max-w-7xl grid grid-cols-3 gap-30 sm:grid-cols-10 lg:grid-cols-3">
             <div className="rounded-xl bg-[#f4efef] p-6 text-center">
               <div className="mb-4 text-4xl text-orange-500">🏅</div>
               <h3 className="text-lg font-semibold">Membership Benefits</h3>
