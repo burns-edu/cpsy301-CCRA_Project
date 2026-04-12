@@ -20,7 +20,8 @@ export default function CreateEventPage() {
   const [checkingAccess, setCheckingAccess] = useState(true);
 
   const [title, setTitle] = useState("");
-  const [date, setDate] = useState("");
+  const [eventDate, setEventDate] = useState("");
+  const [eventTime, setEventTime] = useState("");
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
 
@@ -74,6 +75,28 @@ export default function CreateEventPage() {
     setMessageType("");
   };
 
+  const formatEventDate = (date: string, time: string) => {
+    if (!date) return "";
+
+    const dateObj = time ? new Date(`${date}T${time}`) : new Date(`${date}T00:00`);
+
+    const formattedDate = dateObj.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+    if (!time) return formattedDate;
+
+    const formattedTime = dateObj.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+
+    return `${formattedDate} at ${formattedTime}`;
+  };
+
   const handleCreateEvent = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -88,7 +111,7 @@ export default function CreateEventPage() {
         throw new Error("You must be signed in.");
       }
 
-      if (!title.trim() || !date.trim() || !location.trim()) {
+      if (!title.trim() || !eventDate.trim() || !location.trim()) {
         throw new Error("Please fill in title, date, and location.");
       }
 
@@ -102,9 +125,13 @@ export default function CreateEventPage() {
         imageUrl = await getDownloadURL(storageRef);
       }
 
+      const formattedDate = formatEventDate(eventDate, eventTime);
+
       await addDoc(collection(db, "events"), {
         title: title.trim(),
-        date: date.trim(),
+        date: formattedDate,
+        rawDate: eventDate,
+        rawTime: eventTime,
         location: location.trim(),
         description: description.trim(),
         image: imageUrl,
@@ -116,7 +143,8 @@ export default function CreateEventPage() {
       setMessageType("success");
 
       setTitle("");
-      setDate("");
+      setEventDate("");
+      setEventTime("");
       setLocation("");
       setDescription("");
       setSelectedFile(null);
@@ -177,19 +205,39 @@ export default function CreateEventPage() {
                 />
               </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  Date
-                </label>
-                <input
-                  type="text"
-                  placeholder="June 5-10, 2026"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="w-full rounded-2xl border border-gray-300 px-4 py-3 outline-none focus:border-orange-500"
-                  required
-                />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    Event Date
+                  </label>
+                  <input
+                    type="date"
+                    value={eventDate}
+                    onChange={(e) => setEventDate(e.target.value)}
+                    className="w-full rounded-2xl border border-gray-300 px-4 py-3 outline-none focus:border-orange-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    Event Time
+                  </label>
+                  <input
+                    type="time"
+                    value={eventTime}
+                    onChange={(e) => setEventTime(e.target.value)}
+                    className="w-full rounded-2xl border border-gray-300 px-4 py-3 outline-none focus:border-orange-500"
+                  />
+                </div>
               </div>
+
+              {(eventDate || eventTime) && (
+                <div className="rounded-2xl bg-orange-50 px-4 py-3 text-sm text-orange-700">
+                  <span className="font-semibold">Preview:</span>{" "}
+                  {formatEventDate(eventDate, eventTime)}
+                </div>
+              )}
 
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-700">
