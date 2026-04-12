@@ -3,7 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+  sendEmailVerification,
+} from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 
@@ -15,25 +19,42 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedEmail.endsWith("@gmail.com")) {
+      setError("Only Gmail accounts (@gmail.com) are allowed.");
+      return;
+    }
+
+    const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+    if (!gmailRegex.test(normalizedEmail)) {
+      setError("Please enter a valid Gmail address.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+      await createUserWithEmailAndPassword(auth, normalizedEmail, password);
 
       if (auth.currentUser && fullName.trim()) {
         await updateProfile(auth.currentUser, {
-          displayName: fullName,
+          displayName: fullName.trim(),
         });
       }
 
+      if (auth.currentUser) {
+        await sendEmailVerification(auth.currentUser);
+      }
+
+      setSuccess("Account created successfully. Please verify your Gmail.");
       router.push("/");
     } catch (err: any) {
       setError(err.message || "Failed to sign up.");
@@ -45,13 +66,13 @@ export default function SignUpPage() {
   return (
     <main className="relative min-h-screen w-full overflow-hidden">
       <Image
-  src="/hero-rodeo.png"
-  alt="Rodeo background"
-  fill
-  className="object-cover blur-md scale-110"
-/>
+        src="/hero-rodeo.png"
+        alt="Rodeo background"
+        fill
+        className="object-cover blur-md scale-110"
+      />
 
-<div className="absolute inset-0 bg-black/40" />
+      <div className="absolute inset-0 bg-black/40" />
 
       <div className="relative z-10 mx-auto min-h-screen max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <Link href="/" className="inline-block text-4xl text-white sm:text-5xl">
@@ -80,11 +101,11 @@ export default function SignUpPage() {
 
               <div>
                 <label className="mb-2 block text-lg font-medium sm:text-xl">
-                  Email
+                  Gmail
                 </label>
                 <input
                   type="email"
-                  placeholder="Enter your Email"
+                  placeholder="Enter your Gmail (example@gmail.com)"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full border-b border-gray-300 bg-transparent py-3 outline-none placeholder:text-gray-400"
@@ -112,10 +133,16 @@ export default function SignUpPage() {
                 </p>
               )}
 
+              {success && (
+                <p className="rounded-md bg-green-100 px-3 py-2 text-sm text-green-700">
+                  {success}
+                </p>
+              )}
+
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-xl bg-orange-500 py-3 text-white text-lg shadow-lg hover:bg-orange-600 transition"
+                className="w-full rounded-xl bg-orange-500 py-3 text-lg text-white shadow-lg transition hover:bg-orange-600 disabled:opacity-70"
               >
                 {loading ? "Signing up..." : "Sign up"}
               </button>
