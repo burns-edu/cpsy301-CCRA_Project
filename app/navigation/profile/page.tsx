@@ -149,29 +149,42 @@ export default function ProfilePage() {
         </section>
       </div>
       {showLogoutConfirm && (
-  <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-    <div className="bg-white p-6 rounded-2xl w-[350px] shadow-lg">
-      <h2 className="text-lg font-bold mb-3">
-        Confirm Logout
-      </h2>
+  <div
+    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm animate-in fade-in duration-200"
+    onClick={() => setShowLogoutConfirm(false)}
+  >
+    <div
+      className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 sm:p-7"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="flex items-start gap-4">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange-100 text-2xl">
+          🔒
+        </div>
 
-      <p className="mb-6 text-gray-600">
-        Are you sure?
-      </p>
+        <div className="flex-1">
+          <h2 className="text-xl font-bold text-black sm:text-2xl">
+            Confirm Logout
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-gray-600 sm:text-base">
+            Are you sure?
+          </p>
+        </div>
+      </div>
 
-      <div className="flex justify-end gap-3">
+      <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <button
           onClick={() => setShowLogoutConfirm(false)}
-          className="px-4 py-2 bg-gray-300 rounded"
+          className="rounded-2xl border border-gray-300 px-5 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-100 sm:text-base"
         >
-          No
+          Cancel
         </button>
 
         <button
           onClick={handleLogout}
-          className="px-4 py-2 bg-red-500 text-white rounded"
+          className="rounded-2xl bg-red-500 px-5 py-3 text-sm font-medium text-white transition hover:bg-red-600 sm:text-base"
         >
-          Yes
+          Yes, Log Out
         </button>
       </div>
     </div>
