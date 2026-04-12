@@ -10,6 +10,7 @@ export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const router = useRouter();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -25,10 +26,9 @@ export default function ProfilePage() {
   }, [router]);
 
   const handleLogout = async () => {
-    await signOut(auth);
-    router.push("/sign-in");
-  };
-
+  await signOut(auth);
+  router.push("/sign-in");
+};
   const displayName =
     user?.displayName || user?.email?.split("@")[0] || "User";
 
@@ -141,14 +141,42 @@ export default function ProfilePage() {
 
         {/* Logout */}
         <section className="mt-10 pb-10">
-          <button
-            onClick={handleLogout}
+          <button onClick={() => setShowLogoutConfirm(true)} 
             className="w-full rounded-full bg-orange-500 py-4 text-lg text-white sm:text-xl"
           >
             Log Out
           </button>
         </section>
       </div>
-    </main>
+      {showLogoutConfirm && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+    <div className="bg-white p-6 rounded-2xl w-[350px] shadow-lg">
+      <h2 className="text-lg font-bold mb-3">
+        Confirm Logout
+      </h2>
+
+      <p className="mb-6 text-gray-600">
+        Are you sure?
+      </p>
+
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={() => setShowLogoutConfirm(false)}
+          className="px-4 py-2 bg-gray-300 rounded"
+        >
+          No
+        </button>
+
+        <button
+          onClick={handleLogout}
+          className="px-4 py-2 bg-red-500 text-white rounded"
+        >
+          Yes
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+      </main>
   );
 }
