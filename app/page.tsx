@@ -1,330 +1,183 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import Link from "next/link";
 import Image from "next/image";
-import { onAuthStateChanged, User } from "firebase/auth";
-import { auth, db } from "@/lib/firebase";
-import { collection, doc, getDoc, getDocs, orderBy, query } from "firebase/firestore";
-
-type EventItem = {
-  id: string;
-  title: string;
-  date: string;
-  location: string;
-  image: string;
-  description?: string;
-};
+import Link from "next/link";
+import { ArrowRight, CalendarDays, ShieldCheck, ShoppingBag, Trophy, Users } from "lucide-react";
+import EventCard from "@/components/event-card";
+import EventsList from "@/components/events-list";
+import SiteFooter from "@/components/site-footer";
+import SiteHeader from "@/components/site-header";
+import SponsorsList from "@/components/sponsors-list";
+import { demoEvents, membershipTiers } from "@/lib/site-data";
+import { formatCurrency } from "@/lib/utils";
 
 export default function HomePage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [loadingUser, setLoadingUser] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [events, setEvents] = useState<EventItem[]>([]);
-
-  const menuItems = [
-    { name: "Profile", href: "/navigation/profile", icon: "👤" },
-    { name: "Schedule", href: "/schedule", icon: "🕒" },
-    { name: "Membership", href: "/membership", icon: "➕" },
-    { name: "Products", href: "/products", icon: "🛍️" },
-    { name: "Board of Director", href: "/board-of-director", icon: "👥" },
-    { name: "Results", href: "/results", icon: "📊" },
-    { name: "Photo Gallery", href: "/photo-gallery", icon: "🖼️" },
-    { name: "Rulebook", href: "/rulebook", icon: "📖" },
-    { name: "Cart", href: "/cart", icon: "🛒" },
-    { name: "Contact", href: "/contact", icon: "📔" },
-    { name: "Setting", href: "/setting", icon: "⚙️" },
-  ];
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      setLoadingUser(false);
-
-      if (currentUser) {
-        try {
-          const userRef = doc(db, "users", currentUser.uid);
-          const userSnap = await getDoc(userRef);
-
-          if (userSnap.exists() && userSnap.data().role === "admin") {
-            setIsAdmin(true);
-          } else {
-            setIsAdmin(false);
-          }
-        } catch (error) {
-          console.error("Error checking admin role:", error);
-          setIsAdmin(false);
-        }
-      } else {
-        setIsAdmin(false);
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const q = query(collection(db, "events"), orderBy("createdAt", "desc"));
-        const snapshot = await getDocs(q);
-
-        const eventList: EventItem[] = snapshot.docs.map((docItem) => ({
-          id: docItem.id,
-          ...(docItem.data() as Omit<EventItem, "id">),
-        }));
-
-        setEvents(eventList);
-      } catch (error) {
-        console.error("Error fetching events:", error);
-      }
-    };
-
-    fetchEvents();
-  }, []);
-
   return (
-    <main className="min-h-screen w-full bg-white">
-      <section className="relative min-h-screen w-full overflow-hidden">
+    <main className="min-h-screen bg-stone-50">
+      <SiteHeader />
+
+      <section className="relative isolate overflow-hidden bg-stone-950 text-white">
         <Image
-          src="/hero-rodeo.png"
-          alt="Rodeo hero"
-          fill
-          priority
-          className="object-cover"
-        />
-
-        <div className="absolute inset-0 bg-black/30" />
-
-        <div className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            {user ? (
-              <button
-                onClick={() => setMenuOpen(true)}
-                className="rounded-md p-2 text-3xl text-white"
-              >
-                ☰
-              </button>
-            ) : (
-              <div />
-            )}
-
-            {loadingUser ? null : !user ? (
-              <Link
-                href="/sign-in"
-                className="rounded-xl bg-orange-500 px-5 py-2 text-sm text-white shadow-md sm:px-6 sm:py-3 sm:text-base"
-              >
-                Sign in
-              </Link>
-            ) : isAdmin ? (
-              <Link
-                href="/dashboard"
-                className="rounded-xl bg-orange-500 px-5 py-2 text-sm text-white shadow-md sm:px-6 sm:py-3 sm:text-base"
-              >
-                Dashboard
-              </Link>
-            ) : (
-              <div />
-            )}
-          </div>
-
-          <div className="mt-auto max-w-3xl pb-16 text-white sm:pb-20">
-            <div className="flex flex-wrap items-end gap-3">
-              <h1 className="text-5xl font-light sm:text-6xl md:text-7xl">
-                Welcome
-              </h1>
-
-              {user && (
-                <p className="mb-2 text-base sm:text-lg">
-                  ({user.displayName || user.email})
-                </p>
-              )}
-            </div>
-
-            <h2 className="mt-4 text-2xl leading-snug sm:text-3xl md:text-4xl">
+  src="/hero-rodeo.webp"
+  alt="Rodeo arena"
+  fill
+  priority
+  loading="eager"
+  className="object-cover opacity-65"
+  sizes="100vw"
+/>
+        <div className="absolute inset-0 bg-gradient-to-r from-stone-950 via-stone-950/80 to-stone-950/20" />
+        <div className="relative mx-auto grid min-h-[68svh] w-full max-w-7xl content-end px-4 py-12 sm:min-h-[72svh] sm:px-6 lg:px-8">
+          <div className="max-w-4xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-300 sm:text-sm sm:tracking-[0.24em]">
               Canadian Classic Rodeo Association
-            </h2>
-
-            {!user && !loadingUser && (
-              <div className="mt-6">
-                <Link
-                  href="/sign-up"
-                  className="inline-block rounded-xl bg-orange-500 px-5 py-3 text-base text-white shadow-md sm:px-6 sm:text-lg"
-                >
-                  Sign up
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {user && (
-          <div
-            className={`fixed inset-0 z-50 transition ${
-              menuOpen ? "pointer-events-auto" : "pointer-events-none"
-            }`}
-          >
-            <div
-              className={`absolute inset-0 bg-black/40 transition-opacity ${
-                menuOpen ? "opacity-100" : "opacity-0"
-              }`}
-              onClick={() => setMenuOpen(false)}
-            />
-
-            <div
-              className={`absolute left-0 top-0 h-full w-[85%] max-w-[420px] overflow-y-auto bg-[#f7f7f7] shadow-xl transition-transform duration-300 ${
-                menuOpen ? "translate-x-0" : "-translate-x-full"
-              }`}
-            >
-              <div className="flex items-center justify-between px-6 py-6">
-                <button
-                  onClick={() => setMenuOpen(false)}
-                  className="text-3xl text-black"
-                >
-                  ☰
-                </button>
-              </div>
-
-              <nav className="space-y-1 pb-6">
-                {menuItems.map((item, index) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    onClick={() => setMenuOpen(false)}
-                    className={`flex items-center gap-5 px-6 py-5 text-2xl text-black hover:bg-[#e9dfd7] ${
-                      index === 0 ? "bg-[#e9dfd7]" : ""
-                    }`}
-                  >
-                    <span className="text-3xl text-orange-500">{item.icon}</span>
-                    <span>{item.name}</span>
-                  </Link>
-                ))}
-              </nav>
-            </div>
-          </div>
-        )}
-      </section>
-
-      <section className="bg-[#f5f5f5] py-12">
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="mb-8 text-3xl font-medium sm:text-4xl">
-            Upcoming Events →
-          </h2>
-
-          {events.length === 0 ? (
-            <p className="text-gray-600">No events yet.</p>
-          ) : (
-            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-              {events.map((event) => (
-                <div
-                key={event.id}
-                className="min-w-[280px] max-w-[280px] flex-shrink-0 overflow-hidden rounded-xl bg-[#ece7df] shadow">
-                  <div className="relative h-48 w-full">
-                    <Image
-                    src={event.image}
-                    alt={event.title}
-                    fill
-                    className="object-cover"
-                    unoptimized={event.image.startsWith("http")}
-                    />
-                  </div>
-                  
-                  <div className="p-4">
-                    <h3 className="text-lg font-semibold">{event.title}</h3>
-                    <p className="mt-2 text-sm text-gray-600">{event.date}</p>
-                    <p className="text-sm text-gray-600">{event.location}</p>
-                    
-                    <Link
-                    href="/events"
-                    className="mt-4 inline-block rounded-xl bg-orange-500 px-4 py-2 text-white">
-                    Details
-                    </Link>
-                  </div>
-             </div>
-            ))}
-        </div>
-      )}
-  </div>
-      </section>
-
-      <section className="bg-white py-12">
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-    <h2 className="mb-8 text-2xl font-bold sm:text-3xl">Why Join CCRA?</h2>
-
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      <div className="rounded-xl bg-[#f4efef] p-6 text-center">
-        <div className="mb-4 text-4xl text-orange-500">🏅</div>
-        <h3 className="text-lg font-semibold">Membership Benefits</h3>
-        <p className="mt-2 text-sm leading-7 text-gray-600">
-          Access exclusive perks and member resources.
-        </p>
-      </div>
-
-      <div className="rounded-xl bg-[#f4efef] p-6 text-center">
-        <div className="mb-4 text-4xl text-orange-500">🏆</div>
-        <h3 className="text-lg font-semibold">Compete & Rankings</h3>
-        <p className="mt-2 text-sm leading-7 text-gray-600">
-          Join competitions and track your rankings.
-        </p>
-      </div>
-
-      <div className="rounded-xl bg-[#f4efef] p-6 text-center">
-        <div className="mb-4 text-4xl text-orange-500">👥</div>
-        <h3 className="text-lg font-semibold">Community & Updates</h3>
-        <p className="mt-2 text-sm leading-7 text-gray-600">
-          Connect with members and stay updated.
-        </p>
-            </div>
-          </div>
-
-          <h3 className="mt-12 mb-6 text-2xl font-bold">Our Sponsors</h3>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-            <div className="h-45 rounded-xl bg-[#eee7e4]" />
-            <div className="h-45 rounded-xl bg-[#eee7e4]" />
-            <div className="h-45 rounded-xl bg-[#eee7e4]" />
-            <div className="h-45 rounded-xl bg-[#eee7e4]" />
-            <div className="h-45 rounded-xl bg-[#eee7e4]" />
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-white py-12">
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-2xl bg-[#faf7f5] p-8 shadow-sm">
-            <h2 className="text-3xl font-bold sm:text-4xl">Become a Sponsor</h2>
-            <p className="mt-3 text-lg text-gray-700">
-              Support Canadian rodeo and promote your brand.
             </p>
+            <h1 className="mt-4 text-4xl font-semibold leading-tight sm:text-5xl md:text-6xl lg:text-7xl">
+              Ride, compete, and keep the season moving.
+            </h1>
+            <p className="mt-6 max-w-2xl text-base leading-8 text-stone-100 sm:text-lg">
+              A complete member hub for CCRA events, schedules, results, merchandise, rulebook access,
+              and rodeo community updates.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <Link
+                href="/events"
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-orange-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-700"
+              >
+                View events
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/membership"
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-white/30 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"
+              >
+                Become a member
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
 
+      <section className="border-b border-stone-200 bg-white">
+        <div className="mx-auto grid w-full max-w-7xl gap-4 px-4 py-5 sm:grid-cols-3 sm:px-6 lg:px-8">
+          {[
+            { icon: CalendarDays, label: "Sanctioned events", value: "Season schedule" },
+            { icon: Trophy, label: "Verified standings", value: "Results and rankings" },
+            { icon: Users, label: "Member support", value: "Profiles and resources" },
+          ].map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <div key={item.label} className="flex items-center gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-emerald-50 text-emerald-700">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-stone-950">{item.label}</p>
+                  <p className="text-sm text-stone-600">{item.value}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-700">
+              Upcoming
+            </p>
+            <h2 className="mt-2 text-3xl font-semibold text-stone-950 sm:text-4xl">
+              Events built for members
+            </h2>
+          </div>
+          <Link href="/events" className="inline-flex items-center gap-2 text-sm font-semibold text-sky-700">
+            See all events
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+        <EventsList limit={3} showControls={false} />
+      </section>
+
+      <section className="bg-white py-14">
+        <div className="mx-auto grid w-full max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-8">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-orange-700">
+              Membership
+            </p>
+            <h2 className="mt-2 text-3xl font-semibold text-stone-950 sm:text-4xl">
+              Choose the pass that fits your season.
+            </h2>
+            <p className="mt-4 text-base leading-7 text-stone-600">
+              Membership can support competitor eligibility, updates, resources, and future digital entry workflows.
+            </p>
             <Link
-              href="/contact"
-              className="mt-6 inline-block rounded-2xl bg-orange-500 px-6 py-3 text-white"
+              href="/membership"
+              className="mt-6 inline-flex items-center gap-2 rounded-md bg-stone-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-stone-800"
             >
-              Become a Sponsor
+              Compare memberships
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            {membershipTiers.map((tier) => (
+              <article key={tier.name} className="rounded-md border border-stone-200 bg-stone-50 p-5">
+                <ShieldCheck className="h-6 w-6 text-orange-600" />
+                <h3 className="mt-4 text-lg font-semibold text-stone-950">{tier.name}</h3>
+                <p className="mt-1 text-2xl font-semibold text-stone-950">
+                  {formatCurrency(tier.price)}
+                </p>
+                <p className="mt-3 text-sm leading-6 text-stone-600">{tier.description}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto grid w-full max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-2 lg:px-8">
+        <div className="overflow-hidden rounded-md border border-stone-200 bg-white shadow-sm">
+          <div className="relative h-64">
+            <Image
+              src="/bullriding.webp"
+              alt="Rodeo action"
+              fill
+              className="object-cover"
+              sizes="(min-width: 1024px) 50vw, 100vw"
+            />
+          </div>
+          <div className="p-6">
+            <ShoppingBag className="h-6 w-6 text-orange-600" />
+            <h2 className="mt-4 text-2xl font-semibold text-stone-950">Member products</h2>
+            <p className="mt-3 text-sm leading-6 text-stone-600">
+              Browse apparel, decals, and printed resources with a working local cart prototype.
+            </p>
+              <Link href="/products" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-sky-700">
+              Shop products
+              <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </div>
-      </section>
 
-      <footer className="bg-[#e6dddd] py-10">
-        <div className="mx-auto w-full max-w-7xl px-4 text-center sm:px-6 lg:px-8">
-          <h2 className="text-4xl font-bold tracking-[0.3em] sm:text-5xl">CCRA</h2>
-
-          <div className="mt-8 flex flex-wrap justify-center gap-6 text-base sm:gap-10 sm:text-lg">
-            <Link href="/about">About</Link>
-            <Link href="/events">Events</Link>
-            <Link href="/membership">Membership</Link>
-            <Link href="/contact">Contact</Link>
-          </div>
-
-          <div className="mt-8 flex justify-center gap-8 text-3xl text-[#8f6b47] sm:text-4xl">
-            <span>◎</span>
-            <span>f</span>
-            <span>𝕏</span>
+        <div>
+          <h2 className="text-2xl font-semibold text-stone-950">Season highlights</h2>
+          <div className="mt-5 grid gap-4">
+            {demoEvents.slice(0, 2).map((event) => (
+              <EventCard key={event.id} event={event} />
+            ))}
           </div>
         </div>
-      </footer>
+      </section>
+
+      <section className="border-y border-stone-200 bg-white py-10">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-stone-500">
+            Sponsors
+          </p>
+          <SponsorsList className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5" variant="cards" />
+        </div>
+      </section>
+
+      <SiteFooter />
     </main>
   );
 }

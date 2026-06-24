@@ -1,195 +1,123 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
-import { auth } from "@/lib/firebase";
-import { onAuthStateChanged, signOut, User } from "firebase/auth";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { onAuthStateChanged, signOut, type User } from "firebase/auth";
+import { CalendarDays, LogOut, Settings, ShoppingBag, ShieldCheck, UserRound } from "lucide-react";
+import PageHero from "@/components/page-hero";
+import SiteFooter from "@/components/site-footer";
+import SiteHeader from "@/components/site-header";
+import { auth } from "@/lib/firebase";
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loadingUser, setLoadingUser] = useState(true);
   const router = useRouter();
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (!currentUser) {
         router.push("/sign-in");
-      } else {
-        setUser(currentUser);
+        return;
       }
-      setLoadingUser(false);
+
+      setUser(currentUser);
+      setLoading(false);
     });
 
     return () => unsubscribe();
   }, [router]);
 
   const handleLogout = async () => {
-  await signOut(auth);
-  router.push("/sign-in");
-};
-  const displayName =
-    user?.displayName || user?.email?.split("@")[0] || "User";
+    await signOut(auth);
+    router.push("/sign-in");
+  };
 
-  const email = user?.email || "No email";
-
-  if (loadingUser) {
-    return (
-      <main className="min-h-screen bg-[#f7f7f7] px-4 py-10">
-        <div className="mx-auto max-w-6xl">
-          <p className="text-lg text-gray-600">Loading profile...</p>
-        </div>
-      </main>
-    );
-  }
+  const displayName = user?.displayName || user?.email?.split("@")[0] || "Member";
 
   return (
-    <main className="min-h-screen bg-[#f7f7f7]">
-      {/* Header */}
-      <header className="border-b border-gray-300 bg-white">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5 sm:px-6 lg:px-8">
-          <Link href="/" className="text-3xl text-black">
-            ←
-          </Link>
+    <main className="min-h-screen bg-stone-50">
+      <SiteHeader />
+      <PageHero
+        eyebrow="Profile"
+        title={loading ? "Loading member profile" : `Welcome, ${displayName}`}
+        description="View your account, membership shortcuts, orders, and event tools from one member area."
+        image="/bullriding.jpg"
+      />
 
-          <h1 className="text-2xl font-medium text-black sm:text-3xl">CCRA</h1>
-
-          <div className="w-8" />
-        </div>
-      </header>
-
-      <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* Title */}
-        <section>
-          <h2 className="text-3xl font-normal text-black sm:text-4xl md:text-5xl">
-            Profile
-          </h2>
-        </section>
-
-        {/* Top profile section */}
-        <section className="mt-8 rounded-3xl bg-white p-6 shadow-sm sm:p-8">
-          <div className="flex flex-col items-center text-center">
-            <div className="flex h-36 w-36 items-center justify-center rounded-full border-4 border-orange-500 text-5xl sm:h-44 sm:w-44 sm:text-6xl">
-              👤
+      <section className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="grid gap-8 lg:grid-cols-[360px_1fr]">
+          <aside className="h-fit rounded-md border border-stone-200 bg-white p-6 text-center shadow-sm">
+            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-md bg-orange-50 text-orange-700">
+              <UserRound className="h-12 w-12" />
             </div>
+            <h2 className="mt-5 text-2xl font-semibold text-stone-950">{displayName}</h2>
+            <p className="mt-1 break-words text-sm text-stone-600">{user?.email}</p>
+            <div className="mt-6 grid gap-2">
+              <Link
+                href="/setting"
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-stone-300 px-4 py-3 text-sm font-semibold text-stone-900 transition hover:bg-stone-100"
+              >
+                <Settings className="h-4 w-4" />
+                Account settings
+              </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-red-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-700"
+              >
+                <LogOut className="h-4 w-4" />
+                Log out
+              </button>
+            </div>
+          </aside>
 
-            <h3 className="mt-6 text-2xl font-semibold text-black sm:text-3xl">
-              {displayName}
-            </h3>
+          <div className="grid gap-5 md:grid-cols-2">
+            {[
+              {
+                title: "Membership",
+                text: "Review membership options and prepare for future digital status tracking.",
+                href: "/membership",
+                icon: ShieldCheck,
+              },
+              {
+                title: "Events",
+                text: "Browse the event calendar, details, and entry preparation steps.",
+                href: "/events",
+                icon: CalendarDays,
+              },
+              {
+                title: "Orders",
+                text: "See prototype order history and future receipts.",
+                href: "/orders",
+                icon: ShoppingBag,
+              },
+              {
+                title: "Settings",
+                text: "Update your display name and email verification status.",
+                href: "/setting",
+                icon: Settings,
+              },
+            ].map((item) => {
+              const Icon = item.icon;
 
-            <p className="mt-2 text-base text-gray-700 sm:text-lg">{email}</p>
-
-            <button className="mt-6 rounded-full bg-[#eadbc9] px-8 py-3 text-base text-black sm:px-10 sm:text-lg">
-              ✏ Edit
-            </button>
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="rounded-md border border-stone-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+                >
+                  <Icon className="h-7 w-7 text-orange-600" />
+                  <h3 className="mt-5 text-xl font-semibold text-stone-950">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-stone-600">{item.text}</p>
+                </Link>
+              );
+            })}
           </div>
-        </section>
-
-        {/* Info cards */}
-        <section className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-          <Link
-            href="/membership"
-            className="flex items-center justify-between rounded-2xl bg-[#f1ede9] px-5 py-5 transition hover:shadow-md"
-          >
-            <div className="flex items-center gap-4">
-              <span className="text-3xl text-orange-500 sm:text-4xl">💳</span>
-              <div>
-                <h3 className="text-xl font-semibold text-gray-700 sm:text-2xl">
-                  Membership
-                </h3>
-                <p className="text-sm text-gray-500 sm:text-base">Status</p>
-              </div>
-            </div>
-            <span className="text-3xl text-gray-400">›</span>
-          </Link>
-
-          <Link
-            href="/events"
-            className="flex items-center justify-between rounded-2xl bg-[#f1ede9] px-5 py-5 transition hover:shadow-md"
-          >
-            <div className="flex items-center gap-4">
-              <span className="text-3xl text-orange-500 sm:text-4xl">📅</span>
-              <div>
-                <h3 className="text-xl font-semibold text-gray-700 sm:text-2xl">
-                  Events
-                </h3>
-                <p className="text-sm text-gray-500 sm:text-base">
-                  Event Status
-                </p>
-              </div>
-            </div>
-            <span className="text-3xl text-gray-400">›</span>
-          </Link>
-
-          <Link
-            href="/orders"
-            className="flex items-center justify-between rounded-2xl bg-[#f1ede9] px-5 py-5 transition hover:shadow-md"
-          >
-            <div className="flex items-center gap-4">
-              <span className="text-3xl text-orange-500 sm:text-4xl">🛍️</span>
-              <div>
-                <h3 className="text-xl font-semibold text-gray-700 sm:text-2xl">
-                  Orders
-                </h3>
-                <p className="text-sm text-gray-500 sm:text-base">2 Order</p>
-              </div>
-            </div>
-            <span className="text-3xl text-gray-400">›</span>
-          </Link>
-        </section>
-
-        {/* Logout */}
-        <section className="mt-10 pb-10">
-          <button onClick={() => setShowLogoutConfirm(true)} 
-            className="w-full rounded-full bg-orange-500 py-4 text-lg text-white sm:text-xl"
-          >
-            Log Out
-          </button>
-        </section>
-      </div>
-      {showLogoutConfirm && (
-  <div
-    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm animate-in fade-in duration-200"
-    onClick={() => setShowLogoutConfirm(false)}
-  >
-    <div
-      className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200 sm:p-7"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div className="flex items-start gap-4">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange-100 text-2xl">
-          🔒
         </div>
-
-        <div className="flex-1">
-          <h2 className="text-xl font-bold text-black sm:text-2xl">
-            Confirm Logout
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-gray-600 sm:text-base">
-            Are you sure?
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-        <button
-          onClick={() => setShowLogoutConfirm(false)}
-          className="rounded-2xl border border-gray-300 px-5 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-100 sm:text-base"
-        >
-          Cancel
-        </button>
-
-        <button
-          onClick={handleLogout}
-          className="rounded-2xl bg-red-500 px-5 py-3 text-sm font-medium text-white transition hover:bg-red-600 sm:text-base"
-        >
-          Yes, Log Out
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-      </main>
+      </section>
+      <SiteFooter />
+    </main>
   );
 }

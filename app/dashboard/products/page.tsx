@@ -6,21 +6,18 @@ import Link from "next/link";
 import { collection, deleteDoc, doc, getDocs, orderBy, query } from "firebase/firestore";
 import { ArrowLeft, Pencil, Plus, Trash2 } from "lucide-react";
 import { db } from "@/lib/firebase";
-import type { EventItem } from "@/lib/site-data";
+import type { Product } from "@/lib/site-data";
 import { useAdminAccess } from "@/lib/use-admin-access";
+import { formatCurrency } from "@/lib/utils";
 
-function normalizeEvent(id: string, data: Partial<EventItem>): EventItem {
+function normalizeProduct(id: string, data: Record<string, unknown>): Product {
   return {
     id,
-    title: data.title || "Untitled event",
-    date: data.date || "Date to be announced",
-    rawDate: data.rawDate,
-    rawTime: data.rawTime,
-    location: data.location || "Location to be announced",
-    image: data.image || "/hero-rodeo.png",
-    description: data.description || "Event details will be posted soon.",
-    category: data.category || "Rodeo",
-    entriesOpen: data.entriesOpen,
+    name: (data.name as string) || "Unnamed product",
+    price: typeof data.price === "number" ? data.price : 0,
+    category: (data.category as string) || "Apparel",
+    image: (data.image as string) || "/hero-rodeo.png",
+    description: (data.description as string) || "",
   };
 }
 
@@ -28,55 +25,34 @@ function imageNeedsUnoptimized(src: string) {
   return src.startsWith("http") || src.startsWith("blob:");
 }
 
-export default function ManageEventsPage() {
+export default function ManageProductsPage() {
   const { checkingAccess } = useAdminAccess();
-  const [events, setEvents] = useState<EventItem[]>([]);
-  const [loadingEvents, setLoadingEvents] = useState(true);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  const loadEvents = useCallback(async () => {
-    setLoadingEvents(true);
-
+  const loadProducts = useCallback(async () => {
+    setLoading(true);
     try {
-      const eventsQuery = query(collection(db, "events"), orderBy("createdAt", "desc"));
-      const snapshot = await getDocs(eventsQuery);
-      setEvents(snapshot.docs.map((docItem) => normalizeEvent(docItem.id, docItem.data() as Partial<EventItem>)));
+      const q = query(collection(db, "products"), orderBy("createdAt", "desc"));
+      const snapshot = await getDocs(q);
+      setProducts(snapshot.docs.map((d) => normalizeProduct(d.id, d.data() as Record<string, unknown>)));
+    } catch {
+      setProducts([]);
     } finally {
-      setLoadingEvents(false);
+      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    if (checkingAccess) {
-      return;
-    }
-
-    let active = true;
-
-    void (async () => {
-      try {
-        const eventsQuery = query(collection(db, "events"), orderBy("createdAt", "desc"));
-        const snapshot = await getDocs(eventsQuery);
-
-        if (active) {
-          setEvents(snapshot.docs.map((docItem) => normalizeEvent(docItem.id, docItem.data() as Partial<EventItem>)));
-        }
-      } finally {
-        if (active) {
-          setLoadingEvents(false);
-        }
-      }
-    })();
-
-    return () => {
-      active = false;
-    };
-  }, [checkingAccess]);
+    if (checkingAccess) return;
+    void loadProducts();
+  }, [checkingAccess, loadProducts]);
 
   const handleDelete = async (id: string) => {
-    await deleteDoc(doc(db, "events", id));
+    await deleteDoc(doc(db, "products", id));
     setConfirmDeleteId(null);
-    await loadEvents();
+    await loadProducts();
   };
 
   if (checkingAccess) {
@@ -96,63 +72,60 @@ export default function ManageEventsPage() {
             Dashboard
           </Link>
           <h1 className="order-3 w-full text-center text-xl font-semibold text-stone-950 sm:order-none sm:w-auto sm:text-2xl">
-            Manage Events
+            Manage Products
           </h1>
           <Link
-            href="/dashboard/create-event"
+            href="/dashboard/create-product"
             className="inline-flex items-center gap-2 rounded-md bg-orange-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-700"
           >
             <Plus className="h-4 w-4" />
-            Create
+            Add product
           </Link>
         </div>
       </header>
 
       <section className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {loadingEvents ? (
+        {loading ? (
           <div className="rounded-md border border-stone-200 bg-white p-8 text-stone-600 shadow-sm">
-            Loading events...
+            Loading products...
           </div>
-        ) : events.length === 0 ? (
+        ) : products.length === 0 ? (
           <div className="rounded-md border border-dashed border-stone-300 bg-white p-10 text-center shadow-sm">
-            <h2 className="text-2xl font-semibold text-stone-950">No Firestore events yet</h2>
-            <p className="mt-2 text-stone-600">Create the first live event for the public events page.</p>
+            <h2 className="text-2xl font-semibold text-stone-950">No products yet</h2>
+            <p className="mt-2 text-stone-600">Add the first product to the member shop.</p>
             <Link
-              href="/dashboard/create-event"
+              href="/dashboard/create-product"
               className="mt-6 inline-flex items-center gap-2 rounded-md bg-orange-600 px-5 py-3 text-sm font-semibold text-white"
             >
               <Plus className="h-4 w-4" />
-              Create event
+              Add product
             </Link>
           </div>
         ) : (
           <div className="grid gap-4">
-            {events.map((event) => {
-              const image = event.image || "/hero-rodeo.png";
-
+            {products.map((product) => {
+              const image = product.image || "/hero-rodeo.png";
               return (
-                <article key={event.id} className="grid gap-4 rounded-md border border-stone-200 bg-white p-4 shadow-sm md:grid-cols-[160px_minmax(0,1fr)_auto] md:items-center">
+                <article key={product.id} className="grid gap-4 rounded-md border border-stone-200 bg-white p-4 shadow-sm md:grid-cols-[140px_minmax(0,1fr)_auto] md:items-center">
                   <div className="relative aspect-[4/3] overflow-hidden rounded-md bg-stone-200">
                     <Image
                       src={image}
-                      alt={event.title}
+                      alt={product.name}
                       fill
                       className="object-cover"
-                      sizes="160px"
+                      sizes="140px"
                       unoptimized={imageNeedsUnoptimized(image)}
                     />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-orange-700">
-                      {event.category}
-                    </p>
-                    <h2 className="mt-1 text-xl font-semibold text-stone-950">{event.title}</h2>
-                    <p className="mt-1 text-sm text-stone-600">{event.date}</p>
-                    <p className="text-sm text-stone-600">{event.location}</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-700">{product.category}</p>
+                    <h2 className="mt-1 text-xl font-semibold text-stone-950">{product.name}</h2>
+                    <p className="mt-1 text-sm font-semibold text-orange-700">{formatCurrency(product.price)}</p>
+                    <p className="mt-1 line-clamp-2 text-sm text-stone-600">{product.description}</p>
                   </div>
                   <div className="grid grid-cols-2 gap-2 md:flex md:justify-end">
                     <Link
-                      href={`/dashboard/edit-events/${event.id}`}
+                      href={`/dashboard/edit-products/${product.id}`}
                       className="inline-flex items-center justify-center gap-2 rounded-md bg-stone-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-stone-800"
                     >
                       <Pencil className="h-4 w-4" />
@@ -160,7 +133,7 @@ export default function ManageEventsPage() {
                     </Link>
                     <button
                       type="button"
-                      onClick={() => setConfirmDeleteId(event.id)}
+                      onClick={() => setConfirmDeleteId(product.id)}
                       className="inline-flex items-center justify-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -177,9 +150,9 @@ export default function ManageEventsPage() {
       {confirmDeleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/60 px-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-md bg-white p-6 shadow-2xl">
-            <h2 className="text-xl font-semibold text-stone-950">Delete event?</h2>
+            <h2 className="text-xl font-semibold text-stone-950">Delete product?</h2>
             <p className="mt-2 text-sm leading-6 text-stone-600">
-              This removes the event from Firestore and the public event pages.
+              This removes the product from Firestore and the member shop.
             </p>
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button

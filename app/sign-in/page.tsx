@@ -1,105 +1,157 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import Image from "next/image";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  GoogleAuthProvider,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+} from "firebase/auth";
+import { ArrowLeft, LogIn, Mail } from "lucide-react";
+import { auth } from "@/lib/firebase";
+import { getErrorMessage } from "@/lib/utils";
 
 export default function SignInPage() {
   const router = useRouter();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
+  const handleSignIn = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setMessage("");
     setLoading(true);
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
       router.push("/");
-    } catch (err: any) {
-      setError(err.message || "Failed to sign in.");
+    } catch (error: unknown) {
+      setMessage(getErrorMessage(error, "Failed to sign in."));
     } finally {
       setLoading(false);
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setMessage("");
+    setLoading(true);
+
+    try {
+      await signInWithPopup(auth, new GoogleAuthProvider());
+      router.push("/");
+    } catch (error: unknown) {
+      setMessage(getErrorMessage(error, "Google sign-in is not available."));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!email.trim()) {
+      setMessage("Enter your email first, then request a reset link.");
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, email.trim().toLowerCase());
+      setMessage("Password reset email sent.");
+    } catch (error: unknown) {
+      setMessage(getErrorMessage(error, "Unable to send a reset email."));
+    }
+  };
+
   return (
-    <main className="relative min-h-screen w-full overflow-hidden">
+    <main className="relative min-h-svh overflow-x-hidden bg-stone-950 text-white">
       <Image
-  src="/hero-rodeo.png"
-  alt="Rodeo background"
-  fill
-  className="object-cover blur-sm scale-105"
-/>
+        src="/hero-rodeo.png"
+        alt="Rodeo background"
+        fill
+        priority
+        className="object-cover opacity-50"
+        sizes="100vw"
+      />
+      <div className="absolute inset-0 bg-gradient-to-r from-stone-950 via-stone-950/85 to-stone-950/30" />
 
-<div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
-
-      <div className="relative z-10 mx-auto min-h-screen max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <Link href="/" className="inline-block text-4xl text-white sm:text-5xl">
-          ←
-        </Link>
-
-        <div className="flex min-h-[85vh] items-center justify-center">
-          <form onSubmit={handleSignIn} className="w-full max-w-xl text-center">
-            <h1 className="text-3xl font-light text-white sm:text-4xl md:text-5xl">
-              Have an Account?
+      <div className="relative mx-auto grid min-h-svh w-full max-w-7xl px-4 py-4 sm:px-6 sm:py-6 lg:grid-cols-[0.9fr_1fr] lg:px-8">
+        <div className="flex flex-col justify-between">
+          <Link href="/" className="inline-flex w-fit items-center gap-2 rounded-md px-2 py-2 text-sm font-semibold text-white transition hover:bg-white/10">
+            <ArrowLeft className="h-4 w-4" />
+            Home
+          </Link>
+          <div className="hidden pb-12 lg:block">
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-orange-300">CCRA Member Hub</p>
+            <h1 className="mt-4 max-w-xl text-5xl font-semibold leading-tight">
+              Sign in to manage your rodeo season.
             </h1>
+          </div>
+        </div>
 
-            <div className="mt-8 space-y-5">
-              <input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-full border border-white/70 bg-white/20 px-6 py-4 text-base text-white placeholder:text-white/90 outline-none backdrop-blur-sm sm:text-lg"
-                required
-              />
+        <div className="flex items-center justify-center py-8 sm:py-12">
+          <form onSubmit={handleSignIn} className="w-full max-w-md rounded-md border border-white/15 bg-white/95 p-5 text-stone-950 shadow-2xl sm:p-8">
+            <h2 className="text-2xl font-semibold sm:text-3xl">Welcome back</h2>
+            <p className="mt-2 text-sm leading-6 text-stone-600">
+              Use your member email to access profile, settings, cart, and admin tools when assigned.
+            </p>
 
-              <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-full border border-white/70 bg-white/20 px-6 py-4 text-base text-white placeholder:text-white/90 outline-none backdrop-blur-sm sm:text-lg"
-                required
-              />
-
-              {error && (
-                <p className="rounded-md bg-red-100 px-3 py-2 text-left text-sm text-red-700">
-                  {error}
-                </p>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full rounded-full bg-orange-500 py-4 text-base text-white sm:text-lg disabled:opacity-60"
-              >
-                {loading ? "Signing in..." : "Sign In"}
-              </button>
+            <div className="mt-6 grid gap-4">
+              <label className="grid gap-2">
+                <span className="text-sm font-semibold text-stone-700">Email</span>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  required
+                  className="h-12 rounded-md border border-stone-300 px-3 outline-none transition focus:border-orange-500"
+                />
+              </label>
+              <label className="grid gap-2">
+                <span className="text-sm font-semibold text-stone-700">Password</span>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                  className="h-12 rounded-md border border-stone-300 px-3 outline-none transition focus:border-orange-500"
+                />
+              </label>
             </div>
 
-            <div className="mt-4 flex flex-col gap-2 text-sm text-white/90 sm:flex-row sm:justify-between sm:text-base">
-              <span>Remember me</span>
-              <span>Forgot Password</span>
-            </div>
+            {message && (
+              <p className="mt-5 rounded-md bg-orange-50 px-4 py-3 text-sm text-orange-800">
+                {message}
+              </p>
+            )}
 
-            <p className="mt-10 text-lg text-white sm:text-xl">-Or Sign In With-</p>
+            <button
+              type="submit"
+              disabled={loading}
+              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-md bg-orange-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-700 disabled:opacity-60"
+            >
+              <LogIn className="h-4 w-4" />
+              {loading ? "Signing in..." : "Sign in"}
+            </button>
 
-            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <button type="button" className="bg-orange-500 py-4 text-white">
-                Facebook
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-md border border-stone-300 px-5 py-3 text-sm font-semibold text-stone-900 transition hover:bg-stone-100 disabled:opacity-60"
+            >
+              <Mail className="h-4 w-4" />
+              Continue with Google
+            </button>
+
+            <div className="mt-5 flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+              <button type="button" onClick={handlePasswordReset} className="text-left font-semibold text-orange-700">
+                Forgot password?
               </button>
-              <button type="button" className="bg-orange-500 py-4 text-white">
-                Twitter
-              </button>
+              <Link href="/sign-up" className="font-semibold text-stone-950">
+                Create account
+              </Link>
             </div>
           </form>
         </div>

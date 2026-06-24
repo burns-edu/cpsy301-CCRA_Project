@@ -4,12 +4,101 @@ html,
 body {
   margin: 0;
   padding: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+html {
+  scroll-padding-top: 5rem;
 }
 
 body {
-  background: black;
-  font-family: Arial, Helvetica, sans-serif;
+  background: #fafaf9;
+  color: #1c1917;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
+
+* {
+  box-sizing: border-box;
+}
+
+main {
+  min-width: 0;
+}
+
+/* Smooth crossfade between pages on navigation */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root) {
+  animation: 160ms ease-in both page-out;
+}
+
+::view-transition-new(root) {
+  animation: 240ms ease-out both page-in;
+}
+
+@keyframes page-out {
+  to { opacity: 0; }
+}
+
+@keyframes page-in {
+  from { opacity: 0; }
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+h1,
+h2,
+h3,
+p,
+a,
+button,
+span {
+  overflow-wrap: break-word;
+}
+
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  width: 100%;
+}
+
+::selection {
+  background: #fed7aa;
+  color: #1c1917;
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #fdba74;
+  outline-offset: 2px;
+}
+
 /* hide scrollbar */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
@@ -17,4 +106,45 @@ body {
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* nav pending dot — shown only when navigation takes time */
+.nav-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: currentColor;
+  margin-left: 5px;
+  vertical-align: middle;
+  opacity: 0;
+}
+
+.nav-dot.pending {
+  animation: nav-dot-in 200ms ease-out 100ms both, nav-dot-pulse 1s ease-in-out 100ms infinite;
+}
+
+@keyframes nav-dot-in {
+  to { opacity: 0.45; }
+}
+
+@keyframes nav-dot-pulse {
+  50% { opacity: 0.15; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
 }
